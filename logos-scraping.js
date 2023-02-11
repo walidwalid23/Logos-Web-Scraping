@@ -2,40 +2,46 @@ const express = require('express');
 const request = require('request');
 const cheerio = require('cheerio');
 const app = express();
+const Stream = require('stream')
+const readable = new Stream.Readable({ objectMode: true })
+
 
 const PORT = process.env.PORT || 80;
 app.listen(PORT, () => {
     console.log("Server Listening");
 });
 
-app.get('/WalidLogosApi', function (req, res) {
+app.get('/WalidLogosApi', async function (req, res) {
     //request query inputs
     let country = req.query.country;
-    let pageNumber = req.query.pagenumber - 1; // pages start from 0
+    let pageNumber = 0; // pages start from 0
+    let isLastPage = false;
 
-    let url = 'https://www.brandsoftheworld.com/logos/countries/' + country + "?page=" + pageNumber;
-    // The structure of our request call
-    // The first parameter is our URL
-    // The callback function takes 3 parameters, an error, response status code and the html
-    request(url, function (error, response, html) {
-        //    console.log(url);
-        // First we'll check to make sure no errors occurred when making the request
-        if (!error) {
-            // Next, we'll utilize the cheerio library on the returned html which will essentially give us jQuery functionality
-            var $ = cheerio.load(html);
+
+    while (!isLastPage) {
+
+        let url = 'https://www.brandsoftheworld.com/logos/countries/' + country + "?page=" + pageNumber;
+        // we had to turn the call back to async/await cause otherwise the loop will keep going before the reponse come
+        try {
+            let requestedHtml = await makeRequest(url);
+            var $ = cheerio.load(requestedHtml);
             // We'll be using Cheerio's function to single out the necessary information using JQUERY
             // using DOM selectors which are normally found in CSS.
             var topLogosDiv = $('.view-content');
             var companiesLogosImages = topLogosDiv.find('img');
             //loop through the images elements and extract the attributes you need
-            var companiesNames = [];
-            var logosImages = [];
-
             companiesLogosImages.each(function (i, element) {
-                companiesNames.push(element.attribs.alt);
-                logosImages.push(element.attribs.src);
+                // send object of logo as a stream here
+                let companyName = element.attribs.alt.toString();
+                let logoImageUrl = element.attribs.src.toString();
+                readable.push(JSON.stringify({
+                    "companyName": companyName,
+                    "logoImageUrl": logoImageUrl
+                }));
+
 
             });
+
 
             //EXTRACT THE PAGE NUMBER OF LAST PAGE
             var lastPageParentElem = $('.pager-last');
@@ -43,19 +49,47 @@ app.get('/WalidLogosApi', function (req, res) {
             var lastPageInt = 0;
             // if last page exists (at last page the last page button disappears)
             if (lastPageHref) {
+                // didn't reach last page yet
                 var lastPageStr = lastPageHref.substring(lastPageHref.indexOf('=') + 1);
                 var lastPageInt = parseInt(lastPageStr) + 1;
             }
+            else {
+                //reached last page
+                isLastPage = true;
+                console.log("reached end");
+                // end the stream
+                readable.push(null);
+                // send the stream objects to the response
+                readable.pipe(res);
 
-            // Send the JSON as a response to the client
-            res.json({
-                "companies": companiesNames,
-                "logos": logosImages,
-                "lastPage": (lastPageInt == 0 ? 0 : lastPageInt)
-            });
+
+            }
+
+            pageNumber++;
         }
 
-    });
+        catch (error) {
+            console.log(error);
+        }
+    }
+
+
+
+
 });
+
+
+function makeRequest(url) {
+    return new Promise(function (resolve, reject) {
+        // The callback function takes 3 parameters, an error, response status code and the html
+        request(url, function (error, res, html) {
+            if (!error && res.statusCode === 200) {
+                resolve(html);
+            } else {
+                reject(error);
+            }
+        });
+    });
+}
 
 
