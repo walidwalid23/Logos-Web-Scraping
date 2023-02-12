@@ -3,7 +3,7 @@ const request = require('request');
 const cheerio = require('cheerio');
 const app = express();
 const Stream = require('stream')
-const readable = new Stream.Readable({ objectMode: true })
+
 
 
 const PORT = process.env.PORT || 80;
@@ -19,7 +19,7 @@ app.get('/WalidLogosApi', async function (req, res) {
 
 
     while (!isLastPage) {
-
+        // const readable = new Stream.Readable({ objectMode: true })
         let url = 'https://www.brandsoftheworld.com/logos/countries/' + country + "?page=" + pageNumber;
         // we had to turn the call back to async/await cause otherwise the loop will keep going before the reponse come
         try {
@@ -34,14 +34,14 @@ app.get('/WalidLogosApi', async function (req, res) {
                 // send object of logo as a stream here
                 let companyName = element.attribs.alt.toString();
                 let logoImageUrl = element.attribs.src.toString();
-                readable.push(JSON.stringify({
+                //send data as stream
+                res.write(JSON.stringify({
                     "companyName": companyName,
                     "logoImageUrl": logoImageUrl
                 }));
 
 
             });
-
 
             //EXTRACT THE PAGE NUMBER OF LAST PAGE
             var lastPageParentElem = $('.pager-last');
@@ -57,10 +57,8 @@ app.get('/WalidLogosApi', async function (req, res) {
                 //reached last page
                 isLastPage = true;
                 console.log("reached end");
-                // end the stream
-                readable.push(null);
-                // send the stream objects to the response
-                readable.pipe(res);
+                //end the stream
+                res.end();
 
 
             }
