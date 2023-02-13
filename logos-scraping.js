@@ -20,6 +20,7 @@ app.get('/WalidLogosApi', async function (req, res) {
     // set transfer encoding header as chunked since its a stream
     // res.setHeader('Transfer-Encoding', 'chunked');
     res.set('Connection', 'keep-alive');
+    res.setHeader('Connection', 'keep-alive');
 
     while (!isLastPage) {
         // const readable = new Stream.Readable({ objectMode: true })
