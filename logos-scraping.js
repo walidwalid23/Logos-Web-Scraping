@@ -2,7 +2,6 @@ const express = require('express');
 const request = require('request');
 const cheerio = require('cheerio');
 const app = express();
-const Stream = require('stream')
 
 
 
@@ -16,7 +15,7 @@ app.get('/WalidLogosApi', async function (req, res) {
     let country = req.query.country;
     let pageNumber = 0; // pages start from 0
     let isLastPage = false;
-
+    console.log("received request");
 
     while (!isLastPage) {
         // const readable = new Stream.Readable({ objectMode: true })
