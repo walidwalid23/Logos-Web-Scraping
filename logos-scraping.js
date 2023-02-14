@@ -42,7 +42,7 @@ app.get('/WalidLogosApi', async function (req, res) {
                     "companyName": companyName,
                     "logoImageUrl": logoImageUrl
                 }));
-                //  res.write('\n')
+                res.write('\n')
 
 
             });
