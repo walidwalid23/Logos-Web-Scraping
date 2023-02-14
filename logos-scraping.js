@@ -18,7 +18,7 @@ app.get('/WalidLogosApi', async function (req, res) {
     let isLastPage = false;
     console.log("received request");
     // set transfer encoding header as chunked since its a stream
-    res.writeHead(200, { "Content-Type": "text/html" });
+    res.writeHead(200, { "Content-Type": "text/plain" });
 
     while (!isLastPage) {
         // const readable = new Stream.Readable({ objectMode: true })
