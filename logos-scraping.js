@@ -41,7 +41,8 @@ app.get('/WalidLogosApi', async function (req, res) {
                 res.write(JSON.stringify({
                     "companyName": companyName,
                     "logoImageUrl": logoImageUrl
-                }) + '\n');
+                }));
+                res.write('\n')
 
 
             });
