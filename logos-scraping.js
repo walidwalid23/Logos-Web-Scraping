@@ -37,13 +37,12 @@ app.get('/WalidLogosApi', async function (req, res) {
                 let companyName = element.attribs.alt.toString();
                 let logoImageUrl = element.attribs.src.toString();
                 //send data as stream
-
+                // you must add a new line after each json to be able to iterate over them 
+                // line by line from python side
                 res.write(JSON.stringify({
                     "companyName": companyName,
                     "logoImageUrl": logoImageUrl
                 }) + '\n');
-
-
 
             });
 
@@ -61,12 +60,10 @@ app.get('/WalidLogosApi', async function (req, res) {
                 //reached last page
                 isLastPage = true;
                 console.log("reached end");
-                //end the stream
-                res.end();
-
-
+                //Don't end the stream manually because this will cancel the connection with the client server only after the first country
+                //it will be ended automatically
+                //res.end();
             }
-
             pageNumber++;
         }
 
