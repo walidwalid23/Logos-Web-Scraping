@@ -16,6 +16,7 @@ app.get('/WalidLogosApi', async function (req, res) {
     let country = req.query.country;
     let pageNumber = 0; // pages start from 0
     let isLastPage = false;
+    let lastLogo = null
     console.log("received request");
     // set transfer encoding header as chunked since its a stream
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -27,26 +28,7 @@ app.get('/WalidLogosApi', async function (req, res) {
         try {
             let requestedHtml = await makeRequest(url);
             var $ = cheerio.load(requestedHtml);
-            // We'll be using Cheerio's function to single out the necessary information using JQUERY
-            // using DOM selectors which are normally found in CSS.
-            var topLogosDiv = $('.view-content');
-            var companiesLogosImages = topLogosDiv.find('img');
-            //loop through the images elements and extract the attributes you need
-            companiesLogosImages.each(function (i, element) {
-                // send object of logo as a stream here
-                let companyName = element.attribs.alt.toString();
-                let logoImageUrl = element.attribs.src.toString();
-                //send data as stream
-                // you must add a new line after each json to be able to iterate over them 
-                // line by line from python side
-                res.write(JSON.stringify({
-                    "companyName": companyName,
-                    "logoImageUrl": logoImageUrl
-                }) + '\n');
-
-            });
-
-            //EXTRACT THE PAGE NUMBER OF LAST PAGE
+            //CHECK LAST PAGE
             var lastPageParentElem = $('.pager-last');
             var lastPageHref = lastPageParentElem.find('a').attr('href');
             var lastPageInt = 0;
@@ -60,10 +42,33 @@ app.get('/WalidLogosApi', async function (req, res) {
                 //reached last page
                 isLastPage = true;
                 console.log("reached end");
-                //Don't end the stream manually because this will cancel the connection with the client server only after the first country
-                //it will be ended automatically
-                //res.end();
+
             }
+            var topLogosDiv = $('.view-content');
+            var companiesLogosImages = topLogosDiv.find('img');
+
+            if (isLastPage) {
+                // get last logo in last page to send it to client server to close connection when it reach it
+                lastLogo = companiesLogosImages.last().attr('src').toString();
+            }
+            //loop through the images elements and extract the attributes you need
+            companiesLogosImages.each(function (i, element) {
+                // send object of logo as a stream here
+                let companyName = element.attribs.alt.toString();
+                let logoImageUrl = element.attribs.src.toString();
+                //send data as stream
+                // you must add a new line after each json to be able to iterate over them 
+                // line by line from python side
+                res.write(JSON.stringify({
+                    "companyName": companyName,
+                    "logoImageUrl": logoImageUrl,
+                    "lastLogo": lastLogo
+
+                }) + '\n');
+
+            });
+
+
             pageNumber++;
         }
 
@@ -72,6 +77,15 @@ app.get('/WalidLogosApi', async function (req, res) {
         }
     }
 
+    req.on("close", function () {
+        // THE PROBLEM IS THAT THE WEB SCRAPER IS FASTER THAN THE PROCESSING CLIENT SERVER SO IT FINISHES THEN ENDS THE STREAM
+        // BEFORE THE CLIENT SERVER CONSUME ALL THE STREAM THEN IT WAIT FOR TIME OUT THEN CLOSES CONNECTION AND GIVE ERROR ON
+        // CLIENT SERVER SIDE
+        // Don't end the stream before client consumes all the stream because this will cancel the connection with the client server only after the first nationality
+        // instead pass a boolean to client server when stream finish and end connection from there
+        console.log("client has closed the connection so end the stream");
+        res.end();
+    });
 
 
 
