@@ -1,10 +1,10 @@
 const express = require('express');
-const request = require('request');
+const request = require('requestretry');
 const cheerio = require('cheerio');
 const https = require('https');
 const app = express();
 
-https.globalAgent = new https.Agent({ keepAlive: true });
+//https.globalAgent = new https.Agent({ keepAlive: true });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
