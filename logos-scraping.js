@@ -95,13 +95,36 @@ app.get('/WalidLogosApi', async function (req, res) {
 function makeRequest(url) {
     return new Promise(function (resolve, reject) {
         // The callback function takes 3 parameters, an error, response status code and the html
-        request(url, function (error, res, html) {
-            if (!error && res.statusCode === 200) {
-                resolve(html);
-            } else {
-                reject(error);
-            }
-        });
+        // WAIT FOR RANDOM NUMBER OF SECONDS FROM 1 TO 10 SECS BETWEEN EACH REQUEST TO AVOID ANTI SCRAPERS
+        setTimeout(() => {
+            request({
+                url: url,
+                headers: {
+                    "accept": "*/*",
+                    "content-type": "application/json",
+                    "dnt": "1",
+                    "origin": "https://www.brandsoftheworld.com",
+                    "user-agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36',
+                    'Connection': 'keep-alive',
+                    "sec-ch-ua": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
+                },
+                // The below parameters are specific to request-retry
+                maxAttempts: 5,   // (default) try 5 times
+                retryDelay: 5000,  // (default) wait for 5s before trying again
+                retryStrategy: request.RetryStrategies.HTTPOrNetworkError // (default) retry on 5xx or network errors
+            }, function (error, res, html) {
+                if (!error && res.statusCode === 200) {
+                    resolve(html);
+                } else {
+                    console.log("Error: " + error)
+                    console.log("Status Code: " + res.statusCode)
+                    reject(error);
+                }
+            });
+        }, Math.floor(Math.random() * 1000) + 1);
+
+
+
     });
 }
 
