@@ -33,6 +33,7 @@ app.get('/WalidLogosApi', async function (req, res) {
             var lastPageHref = lastPageParentElem.find('a').attr('href');
             var lastPageInt = 0;
             // if last page exists (at last page the last page button disappears)
+
             if (lastPageHref) {
                 // didn't reach last page yet
                 var lastPageStr = lastPageHref.substring(lastPageHref.indexOf('=') + 1);
@@ -47,6 +48,8 @@ app.get('/WalidLogosApi', async function (req, res) {
             var topLogosDiv = $('.view-content');
             var companiesLogosImages = topLogosDiv.find('img');
 
+
+
             if (isLastPage) {
                 // get last logo in last page to send it to client server to close connection when it reach it
                 lastLogo = companiesLogosImages.last().attr('src').toString();
@@ -56,6 +59,7 @@ app.get('/WalidLogosApi', async function (req, res) {
                 // send object of logo as a stream here
                 let companyName = element.attribs.alt.toString();
                 let logoImageUrl = element.attribs.src.toString();
+                console.log(logoImageUrl)
                 //send data as stream
                 // you must add a new line after each json to be able to iterate over them 
                 // line by line from python side
